@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Services related to S3 Buckets and DB Tables for Kinesis Stream project
+
+Resources:
+
+  ############################################################################
+  #  Buckets
+  ############################################################################
+
+  RawDataBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            ExpirationInDays: 90
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+
+  ############################################################################
+  #  DynamoDB Table
+  ############################################################################
+
+  GenericTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: primaryKey
+          AttributeType: S
+        - AttributeName: partitionKey
+          AttributeType: S
+        - AttributeName: date
+          AttributeType: N
+      KeySchema:
+        - AttributeName: primaryKey
+          KeyType: HASH
+        - AttributeName: partitionKey
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref LsdkGenericTableIndexName
+          KeySchema:
+            - AttributeName: partitionKey
+              KeyType: HASH
+            - AttributeName: date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+Outputs:
+
+  ############################################################################
+  #  Buckets Export
+  ############################################################################
+
+  RawDataBucket:
+    Description: Reference of Kinesis Stream bucket
+    Value: !Ref RawDataBucket
+    Export:
+      Name: !Sub
+        - ${Stack}-${Function}
+        - {Stack: !Ref AWS::StackName, Function: 'RawDataBucket'}
+
+
+  ############################################################################
+  #  DynamoDB Table Export
+  ############################################################################
+  GenericTable:
+    Description: DynamoDB GenericTable Table
+    Value: !Ref GenericTable
+    Export: 
+      Name: !Sub
+        - ${Stack}-${Function}
+        - {Stack: !Ref AWS::StackName, Function: 'GenericTable'}
+
+  GenericTableStreamArn:
+    Description: Stream Arn for GenericTable
+    Value: !GetAtt GenericTable.StreamArn
+    Export: 
+      Name: !Sub
+        - ${Stack}-${Function}
+        - {Stack: !Ref AWS::StackName, Function: 'GenericTableStreamArn'}

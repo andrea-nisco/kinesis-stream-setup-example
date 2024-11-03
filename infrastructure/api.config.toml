@@ -3,21 +3,21 @@ version = 0.1
 [default.global.parameters]
 region = "eu-central-1"
 s3_bucket = "kinesis-bucket-test"
-s3_prefix = "kinesis-alone"
+s3_prefix = "kinesis-api"
 [default.deploy.parameters]
 confirm_changeset = true
 capabilities = "CAPABILITY_NAMED_IAM"
-stack_name = "kinesis-alone"
+stack_name = "kinesis-api"
 tags = "project=\"kinesis\" env=\"test\" customer=\"internal\" cost-allocation=\"kinesis-test\""
 parameter_overrides="StreamStack=kinesis-api"
 
 [dev.global.parameters]
 region = "eu-central-1"
 s3_bucket = "kinesis-bucket-test"
-s3_prefix = "kinesis-alone"
+s3_prefix = "kinesis-api"
 [dev.deploy.parameters]
 confirm_changeset = true
 capabilities = "CAPABILITY_NAMED_IAM"
-stack_name = "kinesis-alone"
+stack_name = "kinesis-api"
 tags = "project=\"kinesis\" env=\"test\" customer=\"internal\" cost-allocation=\"kinesis-test\""
 parameter_overrides="StreamStack=kinesis-api"
