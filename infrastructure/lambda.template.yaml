@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+Description: A comprehensive template for the KinesisStream project including API Gateway, Kinesis Data Stream, and Lambda functions.
+
+Parameters:
+  StorageStack:
+    Type: String
+    Description: Name of the Dynamo storage stack
+  StreamStack:
+    Type: String
+    Description: Name of the Kinesis Stream stack
+  ApiStack:
+    Type: String
+    Description: Name of the api api stack
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Tracing: Active
+
+Resources:
+  ############################################################################
+  #  KinesisStream Consumer Lambda
+  ############################################################################
+  KinesisStreamConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../dist/lambda/ingestion/consumer
+      Description: ""
+      MemorySize: 512
+      Timeout: 900
+      Handler: consumer-kinesis-data-stream.handler
+      Architectures:
+        - x86_64
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+      PackageType: Zip
+      ReservedConcurrentExecutions: 100
+      Policies:
+        - Statement:
+            - Sid: VisualEditor0
+              Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:BatchWriteItem
+                - kinesis:GetShardIterator
+                - kinesis:GetRecords
+                - kinesis:DescribeStream
+                - kinesis:DescribeStreamSummary
+                - kinesis:ListShards
+                - kinesis:ListStreams
+              Resource:
+                - arn:aws:kinesis:*:123456789012:stream/*
+                - arn:aws:dynamodb:*:123456789012:table/*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+              Resource: arn:aws:logs:eu-central-1:123456789012:*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource:
+                - arn:aws:logs:eu-central-1:123456789012:log-group:/aws/lambda/KinesisStreamConsumer:*
+            - Sid: S3WriteAccess
+              Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:PutObjectAcl
+                - s3:ListBucket
+              Resource:
+                - arn:aws:s3:::*
+                - arn:aws:s3:::*/*
+      Environment:
+        Variables:
+          RAW_TRIP_PROGRESS_TABLE_NAME:
+            Fn::ImportValue: !Sub
+              - ${Stack}-${Function}
+              - { Stack: !Ref StorageStack, Function: "RawTripProgressTable" }
+          KinesisDSAndrea:
+            Fn::ImportValue: !Sub
+              - ${Stack}-${Function}
+              - { Stack: !Ref StreamStack, Function: "KinesisStream" }
+          RAW_DATA_BUCKET:
+            Fn::ImportValue: !Sub
+              - ${Stack}-${Function}
+              - { Stack: !Ref StorageStack, Function: "RawDataBucket" }
+          RAW_TRIPS_PROGRESS_TABLE_USER_ID_INDEX_NAME:
+            Fn::ImportValue: !Sub
+              - ${Stack}-${Function}
+              - {
+                  Stack: !Ref StorageStack,
+                  Function: "LsdkRawTripProgressTableUIIndexName",
+                }
+      Events:
+        KinesisStreamEvent:
+          Type: Kinesis
+          Properties:
+            Stream:
+              Fn::ImportValue: !Sub
+                - ${Stack}-${Function}
+                - { Stack: !Ref StreamStack, Function: "KinesisStreamArn" }
+            StartingPosition: LATEST
+            BatchSize: 100
+            ParallelizationFactor: 10

@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Services related to Kinesis Data Stream for Kinesis Stream project
+  
+Resources:
+  ############################################################################
+  #  KinesisStream name
+  ############################################################################
+  KinesisStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: KinesisStream
+      StreamModeDetails:
+        StreamMode: ON_DEMAND
+
+Outputs:
+
+  ############################################################################
+  #  KinesisStream Export
+  ############################################################################
+  KinesisStream:
+    Description: Reference of KinesisStream
+    Value: !Ref KinesisStream
+    Export:
+      Name: !Sub
+        - ${Stack}-${Function}
+        - {Stack: !Ref AWS::StackName, Function: 'KinesisStream'}
+
+  ############################################################################
+  #  KinesisStream Arn Export
+  ############################################################################
+  KinesisStreamArn:
+    Description: ARN of the KinesisStream stream
+    Value: !GetAtt KinesisStream.Arn
+    Export:
+      Name: !Sub
+        - ${Stack}-${Function}
+        - {Stack: !Ref AWS::StackName, Function: 'KinesisStreamArn'}

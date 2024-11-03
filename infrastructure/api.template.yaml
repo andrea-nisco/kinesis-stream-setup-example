@@ -1,0 +1,183 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  StreamStack:
+    Type: String
+    Description: Name of the Kinesis Stream stack
+
+Resources:
+  ApiGatewayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: KinesisPutPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                Resource:
+                  - !ImportValue
+                    'kinesis-stream-KinesisStreamArn'
+
+  Api:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: testapi
+
+  Resource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !GetAtt Api.RootResourceId
+      PathPart: 'postPath'
+
+  MethodPost:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref Resource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      RequestModels:
+        'application/json': 'Empty'
+      Integration:
+        Type: AWS
+        IntegrationResponses:
+          - StatusCode: 200
+            SelectionPattern: '2\d{2}'
+            ResponseTemplates:
+              application/json: |
+                {}
+          - StatusCode: 400
+            SelectionPattern: '4\d{2}'
+            ResponseTemplates:
+              application/json: |
+                {
+                  "error": "Bad input!"
+                }
+          - StatusCode: 403
+            SelectionPattern: '.*AccessDenied.*'
+            ResponseTemplates:
+              application/json: |
+                {
+                  "error": "Access Denied!"
+                }
+          - StatusCode: 500
+            SelectionPattern: '5\d{2}'
+            ResponseTemplates:
+              application/json: |
+                {
+                  "error": "Internal error!"
+                }
+        RequestTemplates:
+          application/json: |
+            {
+              "StreamName": "KinesisStream",
+              "Data": "$util.base64Encode($input.body)",
+              "PartitionKey": "$input.params('headerPartitionKey')"
+            }
+        PassthroughBehavior: WHEN_NO_MATCH
+        IntegrationHttpMethod: POST
+        Uri: 'arn:aws:apigateway:eu-central-1:kinesis:action/PutRecord'
+        Credentials: !GetAtt ApiGatewayRole.Arn
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            'application/json': 'Empty'
+          ResponseParameters:
+            method.response.header.Content-Type: true
+        - StatusCode: 400
+          ResponseModels:
+            'application/json': 'Empty'
+          ResponseParameters:
+            method.response.header.Content-Type: true
+        - StatusCode: 403
+          ResponseModels:
+            'application/json': 'Empty'
+          ResponseParameters:
+            method.response.header.Content-Type: true
+        - StatusCode: 500
+          ResponseModels:
+            'application/json': 'Empty'
+          ResponseParameters:
+            method.response.header.Content-Type: true
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - MethodPost
+    Properties:
+      RestApiId: !Ref Api
+      StageName: test
+
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn: ApiDeployment
+    Properties:
+      Name: 'ApiKey'
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref Api
+          StageName: test
+
+  UsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: ApiDeployment
+    Properties:
+      UsagePlanName: 'UsagePlan'
+      ApiStages:
+        - ApiId: !Ref Api
+          Stage: test
+      Quota:
+        Limit: 100000
+        Period: DAY
+      Throttle:
+        BurstLimit: 5000
+        RateLimit: 10000
+
+  UsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    DependsOn:
+      - ApiKey
+      - UsagePlan
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: 'API_KEY'
+      UsagePlanId: !Ref UsagePlan
+
+Outputs:
+
+  ############################################################################
+  #  ApiUrl Export
+  ############################################################################
+
+  ApiUrl:
+    Description: Reference of stand Alone ApiUrl
+    Value: !Sub 'https://${Api}.execute-api.eu-central-1.amazonaws.com/test/postPath'
+    Export:
+      Name: !Sub
+        - ${Stack}-${Function}
+        - {Stack: !Ref AWS::StackName, Function: 'ApiUrl'}
+
+  ############################################################################
+  #  apiKeyID Export
+  ############################################################################
+  
+  ApiKeyID:
+    Description: Reference of stand Alone ApiKey
+    Value: !Ref ApiKey
+    Export:
+      Name: !Sub
+        - ${Stack}-${Function}
+        - {Stack: !Ref AWS::StackName, Function: 'ApiKeyID'}

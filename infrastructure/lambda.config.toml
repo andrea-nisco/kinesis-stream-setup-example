@@ -1,0 +1,25 @@
+version = 0.1
+
+[default.global.parameters]
+region = "eu-central-1"
+s3_bucket = "kinesis-bucket-test"
+s3_prefix = "kinesis-lambda"
+[default.deploy.parameters]
+confirm_changeset = true
+capabilities = "CAPABILITY_NAMED_IAM"
+stack_name = "kinesis-lambda"
+tags = "project=\"kinesis\" env=\"test\" customer=\"internal\" cost-allocation=\"kinesis-test\""
+parameter_overrides="StorageStack=kinesis-storage StreamStack=kinesis-stream ApiStack=kinesis-api LambdaStack=kinesis-lambda"
+
+[dev.global.parameters]
+region = "eu-central-1"
+s3_bucket = "kinesis-bucket-test"
+s3_prefix = "kinesis-lambda"
+[dev.deploy.parameters]
+confirm_changeset = true
+capabilities = "CAPABILITY_NAMED_IAM"
+stack_name = "kinesis-lambda"
+tags = "project=\"kinesis\" env=\"test\" customer=\"internal\" cost-allocation=\"kinesis-test\""
+parameter_overrides="StorageStack=kinesis-storage StreamStack=kinesis-stream ApiStack=kinesis-api LambdaStack=kinesis-lambda"
+
+
