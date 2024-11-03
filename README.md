@@ -17,7 +17,7 @@ During my internship, I worked extensively on Kinesis Stream applications and le
 - **Metrics Logging**: Example code logs metrics like record size and processing rate.
 
 ## Images
-![Architecture Results](results/Architecture Results.png) 
+![Architecture Results](kinesis-stream-setup-example/results/Architecture%20Results.png)
 
 ## Images
 - **Results**
