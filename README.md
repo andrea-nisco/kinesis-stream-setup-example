@@ -1,5 +1,5 @@
 # kinesis-stream-setup-example
-This project comes from my experience during my internship as a backend engineer. the project provides a set of YAML template and Lambda Function that helped me with the development of a Kinesis Stream application.
+This project comes from my experience during my internship as a backend engineer. the project provides a set of YAML template and a lambda function that helped me with the development of a Kinesis Stream application.
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -8,17 +8,21 @@ This project comes from my experience during my internship as a backend engineer
 - [Results](#results)
 
 ## Introduction
-During my internship, I worked extensively on Kinesis Stream applications and learned how to set up and optimize stream processing using AWS services. This project is a simplified example to demonstrate how you can configure and consume Kinesis Streams using AWS Lambda and other related AWS services.
+This repository is not a complete or production-ready solution but rather a collection of the templates and Lambda functions I utilized during my internship.
+During this experience, I was asked to develop a kinesis stream application capable of handling real user traffic efficiently. The architecture needed to scale automatically based on workload demands. Ultimately, I managed to process over 80,000 messages within a 30-minute window, successfully storing data in S3 buckets and DynamoDB tables.
 
 ## Features
-- **Kinesis Stream Setup**: Includes a YAML CloudFormation template to quickly set up a Kinesis Stream.
-- **S3 and DynamoDB Integration**: Example templates to create and link S3 and DynamoDB resources.
-- **Lambda Consumer Function**: A sample Lambda function for processing incoming Kinesis Stream records.
-- **Metrics Logging**: Example code logs metrics like record size and processing rate.
+- **Storage**: YAML CloudFormation templates for setting up DynamoDB tables and S3 buckets.
+- **Stream**: YAML template used for configuring the Kinesis Stream.
+- **Api**: A template for an API that sends messages to the Kinesis Stream via POST requests. Instead of using a Producer Lambda, as suggested by AWS guidelines, I opted out to minimize the number of active Lambda functions in our AWS environment. I used this approach because I didn't need to preprocess the messages. 
+- **Lambda**: The Consumer Lambda function for processing records from the Kinesis Stream.
 
 ## Images
 ![Architecture Results](results/architecture-results.png)
 
-## Images
-- **Results**
+![Architecture Results](results/architecture-results-2.png)
+
+![Architecture Results](results/milliseconds.png)
+
+![Architecture Results](results/total-concurrent-executions.png)
 
